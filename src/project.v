@@ -49,7 +49,7 @@ endmodule
 
 
 // ======================================================
-// SUPERVISOR STEP ORIGINAL
+// SUPERVISOR STEP
 // ======================================================
 
 module supervisor_step #(
@@ -64,7 +64,14 @@ module supervisor_step #(
 );
 
     // BLOQUE 1. REGISTROS INTERNOS
-    reg [4:0] contador;
+
+    // Dimensionamiento automatico del contador
+    localparam integer BITS_CONTADOR =
+        (TIMEOUT > 1) ? $clog2(TIMEOUT) : 1;
+
+    localparam integer LIMITE = TIMEOUT - 1;
+
+    reg [BITS_CONTADOR-1:0] contador;
 
     reg x_meta, x_sync, x_anterior;
     reg y_meta, y_sync, y_anterior;
@@ -100,19 +107,19 @@ module supervisor_step #(
     // BLOQUE 4. TEMPORIZADOR Y FALLA
     always @(posedge clk or posedge reset) begin
         if (reset) begin
-            contador <= 5'd0;
+            contador <= {BITS_CONTADOR{1'b0}};
             falla    <= 1'b0;
         end
         else if (falla) begin
             falla <= 1'b1;
         end
         else if (!vigilar_movimiento) begin
-            contador <= 5'd0;
+            contador <= {BITS_CONTADOR{1'b0}};
         end
         else if (pulso_step) begin
-            contador <= 5'd0;
+            contador <= {BITS_CONTADOR{1'b0}};
         end
-        else if (contador >= TIMEOUT - 1) begin
+        else if (contador >= LIMITE[BITS_CONTADOR-1:0]) begin
             falla <= 1'b1;
         end
         else begin
